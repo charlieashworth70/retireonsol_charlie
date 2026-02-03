@@ -65,11 +65,22 @@ export function MonitorAccum({
   // Check if there's an active plan
   const activePlan = loadActivePlan();
   const hasActivePlan = activePlan !== null && activePlan.startPhase === 'accum';
+  // Use hasActivePlan to suppress unused variable warning if needed, or remove if logic changes
+  void hasActivePlan; 
 
   return (
     <div>
       <section className="adv-section">
-        {allFunded && connected ? (
+        {!hasActivePlan ? (
+          <div style={{ textAlign: 'center', padding: '2rem', background: 'rgba(153, 69, 255, 0.05)', borderRadius: '12px' }}>
+            <h3 style={{ color: 'var(--sol-purple)', margin: '0 0 1rem 0' }}>
+              No Active Plan
+            </h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+              You haven't executed a retirement plan yet. Go to the Plan tab to design and execute your strategy.
+            </p>
+          </div>
+        ) : allFunded && connected ? (
           <div style={{ textAlign: 'center', padding: '2rem', background: 'rgba(20, 241, 149, 0.1)', borderRadius: '12px' }}>
             <h3 style={{ color: 'var(--sol-green)', margin: '0 0 1rem 0', fontSize: '1.5rem' }}>
               ✅ Plan Funded!
