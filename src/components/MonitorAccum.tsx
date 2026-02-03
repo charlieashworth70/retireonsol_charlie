@@ -1,5 +1,6 @@
 import { formatUSD, formatSOL } from '../utils/calculations';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import { loadActivePlan } from '../utils/storage';
 
 interface MonitorAccumProps {
   currentJitoSOL: number;
@@ -60,6 +61,10 @@ export function MonitorAccum({
 
   // Calculate expected DCA contribution (simplified - assumes plan started today)
   const expectedInvested = targetSOL * currentPrice + (dcaAmountUSD * 12 * years);
+
+  // Check if there's an active plan
+  const activePlan = loadActivePlan();
+  const hasActivePlan = activePlan !== null && activePlan.startPhase === 'accum';
 
   return (
     <div>

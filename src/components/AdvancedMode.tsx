@@ -280,7 +280,37 @@ export function AdvancedMode({ initialSOL = 100, initialDCA = 500, initialYears 
             <>
               {/* Holdings Section */}
               <section className="adv-section">
-                <h2>Your SOL Holdings</h2>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <h2>Your SOL Holdings</h2>
+                  <button
+                    type="button"
+                    className="link-btn"
+                    style={{ fontSize: '0.9rem', color: 'var(--sol-purple)', fontWeight: 'bold' }}
+                    onClick={() => {
+                      // Demo Mode: Pre-fill realistic test values
+                      setCurrentSOL(1000);
+                      setCurrentJitoSOL(500);
+                      setYears(15);
+                      setDcaAmountUSD(2000);
+                      setDcaMaxLimit(5000);
+                      setGrowthModel('cagr');
+                      setModelParams({
+                        cagr: 0.25, // 25%
+                        cagrDecay: 'auto',
+                        powerLawSlope: 1.6,
+                        sCurveYearsToHalfRemaining: 12,
+                      });
+                      setJitoSOLEnabled(true);
+                      setInflationEnabled(true);
+                      setInflationRate(0.035); // 3.5%
+                      setMcEnabled(true);
+                      setMcVolatility(0.80); // 80%
+                      setMcSimulations(500);
+                    }}
+                  >
+                    🎮 Demo Mode
+                  </button>
+                </div>
                 
                 <div className="input-row">
                   <div className="input-group">
