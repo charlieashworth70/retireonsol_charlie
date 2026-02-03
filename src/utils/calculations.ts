@@ -1,98 +1,183 @@
 /**
- * Core retirement calculations
- * Fixed realistic parameters - no toggles
+ * RetireOnSol - Core Calculation Engine
+ *
+ * Model: You DCA dollars into SOL over time. SOL price grows based on selected model.
+ *
+ * - You invest $X per period (weekly/monthly)
+ * - SOL price grows based on selected growth model
+ * - Your bag (in SOL) grows from purchases
+ * - Your bag value (in USD) grows from both purchases AND price appreciation
  */
 
-export interface RetirementInput {
+import {
+  calculateFuturePrice,
+  type GrowthModel,
+  type GrowthModelParams,
+} from './growthModels';
+
+export interface ProjectionInput {
   currentSOL: number;
-  dcaMonthly: number; // USD per month
+  currentPrice: number;
   years: number;
-  withdrawalMonthly: number; // USD per month in retirement
+  dcaAmountUSD: number;
+  dcaFrequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  growthModel: GrowthModel;
+  modelParams: GrowthModelParams;
+  jitoSOLEnabled?: boolean;
+  jitoSOLAPR?: number; // e.g. 0.075 for 7.5%
 }
 
-export interface RetirementProjection {
-  startValue: number; // USD
-  endValue: number; // USD (median/P50)
-  totalInvested: number; // USD
-  monthlyIncome: number; // USD
-  yearsOfIncome: number;
-  p10: number; // Pessimistic case
-  p50: number; // Median case
-  p90: number; // Optimistic case
+export interface YearlyProjection {
+  year: number;
+  solBalance: number;
+  solPrice: number;
+  portfolioValueUSD: number;
+  totalInvestedUSD: number;
+  gainUSD: number;
+}
+
+export interface ProjectionResult {
+  projections: YearlyProjection[];
   finalSOL: number;
+  finalPrice: number;
+  finalValueUSD: number;
+  totalInvestedUSD: number;
+  totalGainUSD: number;
+  initialValueUSD: number;
 }
 
-// FIXED PARAMETERS (hardcoded, no UI controls)
-const CURRENT_SOL_PRICE = 180; // Will fetch live later
-const SOL_GROWTH_RATE = 0.15; // 15% CAGR - realistic long-term
-const INFLATION_RATE = 0.035; // 3.5% annual inflation (always on)
-const VOLATILITY = 0.60; // 60% annualized vol for mature SOL
-// Debasement: 0% (not included)
-// JitoSOL: disabled (pure SOL only)
-
-export function calculateRetirement(input: RetirementInput): RetirementProjection {
-  const { currentSOL, dcaMonthly, years, withdrawalMonthly } = input;
-  
-  // Start value
-  const startValue = currentSOL * CURRENT_SOL_PRICE;
-  
-  // Total DCA contributions
-  const totalDCA = dcaMonthly * 12 * years;
-  const totalInvested = startValue + totalDCA;
-  
-  // Project SOL accumulation with DCA
-  let sol = currentSOL;
-  let totalUSDInvested = startValue;
-  
-  for (let year = 0; year < years; year++) {
-    // Annual growth
-    sol *= (1 + SOL_GROWTH_RATE);
-    
-    // DCA additions (convert USD to SOL at average price throughout year)
-    const yearlyDCA = dcaMonthly * 12;
-    const avgPrice = CURRENT_SOL_PRICE * Math.pow(1 + SOL_GROWTH_RATE, year + 0.5);
-    sol += yearlyDCA / avgPrice;
-    totalUSDInvested += yearlyDCA;
+/**
+ * Get number of DCA contributions per year based on frequency
+ */
+function getContributionsPerYear(frequency: 'daily' | 'weekly' | 'monthly' | 'yearly'): number {
+  switch (frequency) {
+    case 'daily': return 365;
+    case 'weekly': return 52;
+    case 'monthly': return 12;
+    case 'yearly': return 1;
   }
-  
-  const finalSOL = sol;
-  const endValue = finalSOL * CURRENT_SOL_PRICE * Math.pow(1 + SOL_GROWTH_RATE, years);
-  
-  // Apply inflation to withdrawal needs
-  const inflationAdjustedWithdrawal = withdrawalMonthly * Math.pow(1 + INFLATION_RATE, years);
-  const annualWithdrawal = inflationAdjustedWithdrawal * 12;
-  const yearsOfIncome = endValue / annualWithdrawal;
-  
-  // Monte Carlo confidence intervals (lognormal distribution)
-  const timeVolatility = VOLATILITY * Math.sqrt(years);
-  
-  const p10 = endValue * Math.exp(-1.28 * timeVolatility); // Pessimistic (10th percentile)
-  const p50 = endValue; // Median (50th percentile)
-  const p90 = endValue * Math.exp(1.28 * timeVolatility); // Optimistic (90th percentile)
-  
+}
+
+/**
+ * Calculate projected portfolio over time using selected growth model
+ */
+export function calculateProjection(input: ProjectionInput): ProjectionResult {
+  const {
+    currentSOL,
+    currentPrice,
+    years,
+    dcaAmountUSD,
+    dcaFrequency,
+    growthModel,
+    modelParams,
+    jitoSOLEnabled = false,
+    jitoSOLAPR = 0.075,
+  } = input;
+
+  const contributionsPerYear = getContributionsPerYear(dcaFrequency);
+  const annualInvestmentUSD = dcaAmountUSD * contributionsPerYear;
+
+  const projections: YearlyProjection[] = [];
+
+  let solBalance = currentSOL;
+  let totalInvestedUSD = currentSOL * currentPrice;
+  const initialValueUSD = totalInvestedUSD;
+
+  for (let year = 1; year <= years; year++) {
+    // Get prices from the growth model
+    const startPrice = year === 1
+      ? currentPrice
+      : calculateFuturePrice(currentPrice, year - 1, growthModel, modelParams);
+    const endPrice = calculateFuturePrice(currentPrice, year, growthModel, modelParams);
+
+    // Average price during the year (for DCA purchases)
+    const avgPrice = (startPrice + endPrice) / 2;
+
+    // SOL purchased this year via DCA
+    const solPurchased = avgPrice > 0 ? annualInvestmentUSD / avgPrice : 0;
+
+    // Update balances
+    solBalance += solPurchased;
+
+    // JitoSOL staking yield: compound SOL balance with APR
+    if (jitoSOLEnabled && jitoSOLAPR > 0) {
+      solBalance *= (1 + jitoSOLAPR);
+    }
+
+    totalInvestedUSD += annualInvestmentUSD;
+
+    const portfolioValueUSD = solBalance * endPrice;
+    const gainUSD = portfolioValueUSD - totalInvestedUSD;
+
+    projections.push({
+      year,
+      solBalance: Math.round(solBalance * 100) / 100,
+      solPrice: Math.round(endPrice * 100) / 100,
+      portfolioValueUSD: Math.round(portfolioValueUSD),
+      totalInvestedUSD: Math.round(totalInvestedUSD),
+      gainUSD: Math.round(gainUSD),
+    });
+  }
+
+  // Handle edge case where projections is empty (years < 1)
+  if (projections.length === 0) {
+    const portfolioValueUSD = solBalance * currentPrice;
+    return {
+      projections: [{
+        year: 0,
+        solBalance: Math.round(solBalance * 100) / 100,
+        solPrice: Math.round(currentPrice * 100) / 100,
+        portfolioValueUSD: Math.round(portfolioValueUSD),
+        totalInvestedUSD: Math.round(totalInvestedUSD),
+        gainUSD: 0,
+      }],
+      finalSOL: solBalance,
+      finalPrice: currentPrice,
+      finalValueUSD: portfolioValueUSD,
+      totalInvestedUSD,
+      totalGainUSD: 0,
+      initialValueUSD,
+    };
+  }
+
+  const final = projections[projections.length - 1];
+
   return {
-    startValue,
-    endValue: p50,
-    totalInvested,
-    monthlyIncome: withdrawalMonthly,
-    yearsOfIncome,
-    p10,
-    p50,
-    p90,
-    finalSOL
+    projections,
+    finalSOL: final.solBalance,
+    finalPrice: final.solPrice,
+    finalValueUSD: final.portfolioValueUSD,
+    totalInvestedUSD: final.totalInvestedUSD,
+    totalGainUSD: final.gainUSD,
+    initialValueUSD,
   };
 }
 
-export function formatUSD(value: number): string {
-  if (value >= 1_000_000) {
-    return `$${(value / 1_000_000).toFixed(2)}M`;
+/**
+ * Format USD for display
+ */
+export function formatUSD(amount: number): string {
+  if (amount >= 1000000) {
+    return `$${(amount / 1000000).toFixed(2)}M`;
   }
-  if (value >= 1_000) {
-    return `$${(value / 1_000).toFixed(1)}K`;
+  if (amount >= 1000) {
+    return `$${(amount / 1000).toFixed(1)}K`;
   }
-  return `$${value.toFixed(0)}`;
+  return `$${amount.toFixed(0)}`;
 }
 
-export function formatSOL(value: number): string {
-  return value.toFixed(2);
+/**
+ * Format SOL for display
+ */
+export function formatSOL(amount: number): string {
+  if (amount >= 1000000) {
+    return `${(amount / 1000000).toFixed(2)}M`;
+  }
+  if (amount >= 1000) {
+    return `${(amount / 1000).toFixed(2)}K`;
+  }
+  return amount.toFixed(2);
 }
+
+// Re-export growth model types for convenience
+export type { GrowthModel, GrowthModelParams } from './growthModels';

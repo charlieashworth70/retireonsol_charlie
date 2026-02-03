@@ -1,16 +1,35 @@
-import { formatUSD, type RetirementProjection } from '../utils/calculations';
+import { formatUSD, type RetirementProjection } from '../utils/calculationsBasic';
+import { shareProjection } from '../utils/shareImageBasic';
 import './Results.css';
 
 interface ResultsProps {
   projection: RetirementProjection;
+  years: number;
+  currentSOL: number;
+  dcaMonthly: number;
 }
 
-export function Results({ projection }: ResultsProps) {
+export function Results({ projection, years, currentSOL, dcaMonthly }: ResultsProps) {
   const roi = ((projection.p50 - projection.totalInvested) / projection.totalInvested) * 100;
   const sustainable = projection.yearsOfIncome >= 30;
 
+  const handleShare = async () => {
+    try {
+      await shareProjection({ projection, years, currentSOL, dcaMonthly });
+    } catch (error) {
+      console.error('Failed to share:', error);
+      alert('Failed to generate share image. Please try again.');
+    }
+  };
+
   return (
     <div className="results">
+      <div className="results-header">
+        <h3 style={{ margin: 0, fontSize: '1.2rem' }}>Your Projection</h3>
+        <button className="share-btn" onClick={handleShare}>
+          📤 Share
+        </button>
+      </div>
       <div className="result-card primary">
         <div className="result-label">Projected Portfolio Value (Median)</div>
         <div className="result-value">{formatUSD(projection.p50)}</div>

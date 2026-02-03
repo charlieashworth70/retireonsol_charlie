@@ -4,6 +4,37 @@
   gap: 1rem;
 }
 
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.share-btn {
+  background: linear-gradient(135deg, var(--sol-purple), var(--sol-cyan));
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.share-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(153, 69, 255, 0.3);
+}
+
+.share-btn:active {
+  transform: translateY(0);
+}
+
 .result-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
