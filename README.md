@@ -1,73 +1,90 @@
-# React + TypeScript + Vite
+# RetireOnSol (Charlie's Version)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+My clean, opinionated take on Solana retirement planning.
 
-Currently, two official plugins are available:
+## Design Philosophy
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+**Less is more.** Most retirement calculators overwhelm users with options. This one doesn't.
 
-## React Compiler
+### What's Different
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. **Smart Defaults** — Works out of box. 25% SOL CAGR, 80% vol, 4% rule. Realistic, not moonboy.
+2. **Progressive Disclosure** — Advanced features hidden until you need them. Clean first impression.
+3. **Mobile-First** — Big touch targets, readable on phones. 90% of people plan on mobile.
+4. **Instant Feedback** — Change a slider, see results immediately. No "Calculate" button needed.
+5. **Honest Numbers** — Shows confidence intervals (P10/P90). Retirement planning needs realism, not hopium.
 
-## Expanding the ESLint configuration
+### What's Included
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Wallet Integration** — Connect Phantom, import SOL balance instantly
+- **DCA Planning** — Monthly USD contributions with price averaging
+- **Growth Projections** — Conservative 25% CAGR (not 1000% moonshots)
+- **Monte Carlo** — 90% confidence bands for realistic planning
+- **Sustainability Check** — Red/green warnings if your plan won't last 30 years
+- **Clean UI** — Solana brand colors, dark theme, no clutter
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### What's NOT Included (Yet)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- Monitor tab (planned — track active plans vs actual wallet)
+- Jupiter swap integration (planned — DCA automation)
+- Notifications (planned — "time to DCA" reminders)
+- JitoSOL staking (planned — liquid staking APR)
+- Power law / S-curve models (CAGR is enough for v1)
+- Inflation adjustments (adds complexity most won't use)
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Tech Stack
+
+- **Vite + React + TypeScript** — Fast, type-safe, modern
+- **Solana Wallet Adapter** — Standard wallet integration
+- **No bloat** — Minimal dependencies, <600KB bundle
+- **CSS only** — No Tailwind/MUI. Just clean, custom styles.
+
+## Run Locally
+
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Build
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
 ```
+
+Outputs to `dist/` — ready for deployment.
+
+## Philosophy on Features
+
+**Every feature has a cost.** Users pay with confusion, developers pay with maintenance.
+
+- **Don't add unless 80%+ will use it**
+- **Don't show unless user asks**
+- **Don't bloat bundle for edge cases**
+
+This isn't feature-complete. It's feature-*right*.
+
+## Compared to Original RetireOnSol
+
+| Original | Charlie's Version |
+|----------|------------------|
+| Every option upfront | Hidden until needed |
+| 7 growth models | 1 (CAGR) |
+| Inflation/debasement | Not yet |
+| JitoSOL toggle | Not yet |
+| ~1MB bundle | ~600KB |
+| Complex UI | Minimal UI |
+
+Both valid. Different goals.
+
+Original = Power tool for quants  
+This = iPhone of retirement planning
+
+## License
+
+MIT — do what you want.
+
+---
+
+Built by Charlie Ashworth for Chris Booth.  
+**Feedback welcome.**
