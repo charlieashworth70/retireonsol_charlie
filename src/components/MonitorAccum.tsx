@@ -1,4 +1,5 @@
 import { formatUSD, formatSOL } from '../utils/calculations';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 
 interface MonitorAccumProps {
   currentJitoSOL: number;
@@ -10,7 +11,6 @@ interface MonitorAccumProps {
   walletSOL: number | null;
   walletJitoSOL: number | null;
   connected: boolean;
-  onImportWallet?: () => void;
 }
 
 function ProgressBar({ current, target }: { current: number; target: number }) {
@@ -41,8 +41,8 @@ export function MonitorAccum({
   walletSOL,
   walletJitoSOL,
   connected,
-  onImportWallet,
 }: MonitorAccumProps) {
+  const { setVisible } = useWalletModal();
   const solBalance = walletSOL ?? 0;
   const jitoBalance = walletJitoSOL ?? 0;
   const targetJitoSOL = currentJitoSOL;
@@ -88,11 +88,9 @@ export function MonitorAccum({
                 <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
                   Connect your wallet to see funding progress
                 </p>
-                {onImportWallet && (
-                  <button className="btn-primary" onClick={onImportWallet}>
-                    Connect Wallet
-                  </button>
-                )}
+                <button className="btn-primary" onClick={() => setVisible(true)}>
+                  Connect Wallet
+                </button>
               </div>
             ) : (
               <>

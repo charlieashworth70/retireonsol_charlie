@@ -37,7 +37,7 @@ interface AdvancedModeProps {
 export function AdvancedMode({ initialSOL = 100, initialDCA = 500, initialYears = 10 }: AdvancedModeProps) {
   // Wallet connection
   const { connected } = useWallet();
-  const { balance: walletSOL, jitoSolBalance: walletJitoSOL, refetch: refetchBalance } = useWalletBalance();
+  const { balance: walletSOL, jitoSolBalance: walletJitoSOL } = useWalletBalance();
 
   // Tab state
   const [mainTab, setMainTab] = useState<MainTab>('plan');
@@ -834,7 +834,6 @@ export function AdvancedMode({ initialSOL = 100, initialDCA = 500, initialYears 
               walletSOL={walletSOL}
               walletJitoSOL={walletJitoSOL}
               connected={connected}
-              onImportWallet={refetchBalance}
             />
           )}
 
@@ -853,8 +852,8 @@ export function AdvancedMode({ initialSOL = 100, initialDCA = 500, initialYears 
         </>
       )}
 
-      {/* Results Section - Show when on Plan tab */}
-      {mainTab === 'plan' && projection && (
+      {/* Results Section - Show when on Plan→Grow tab */}
+      {mainTab === 'plan' && planSubTab === 'grow' && projection && (
         <section className="adv-section results-section">
           <div className="results-header">
             <h2>After {spendNow ? '0' : years} Years</h2>
@@ -912,12 +911,16 @@ export function AdvancedMode({ initialSOL = 100, initialDCA = 500, initialYears 
             </div>
           )}
 
-          {!spendNow && (
+          {!spendNow && planSubTab === 'grow' && (
             <button
               type="button"
               className="btn-primary"
               style={{ marginTop: '1.5rem', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-              onClick={() => setPlanSubTab('spend')}
+              onClick={() => {
+                setPlanSubTab('spend');
+                // Scroll to top when navigating to Spend tab
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
             >
               Next: Plan Spend Strategy
               <ArrowRight size={18} />

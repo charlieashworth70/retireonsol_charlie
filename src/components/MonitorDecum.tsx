@@ -72,14 +72,14 @@ export function MonitorDecum({
 
             <div style={{ 
               padding: '1rem', 
-              background: 'rgba(20, 241, 149, 0.1)', 
-              border: '1px solid var(--sol-green)',
+              background: 'rgba(153, 69, 255, 0.1)', 
+              border: '1px solid rgba(153, 69, 255, 0.3)',
               borderRadius: '8px',
-              color: 'var(--sol-green)',
+              color: 'var(--sol-purple)',
               textAlign: 'center',
               fontWeight: 'bold'
             }}>
-              ✅ You're on track with your withdrawal plan
+              💡 Plan not yet active - Execute from Plan→Spend to begin tracking
             </div>
           </div>
         )}

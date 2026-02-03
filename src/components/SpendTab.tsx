@@ -343,6 +343,15 @@ export function SpendTab({
               )}
             </p>
           </div>
+
+          <button
+            type="button"
+            className="btn-primary"
+            style={{ marginTop: '1.5rem', width: '100%', padding: '1rem', fontSize: '1.1rem', fontWeight: 'bold' }}
+            onClick={() => alert('Plan execution coming soon! This will connect to Jupiter for DCA automation and withdrawal scheduling.')}
+          >
+            Execute Plan
+          </button>
         </section>
       )}
     </>
