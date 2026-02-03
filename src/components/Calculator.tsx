@@ -113,7 +113,7 @@ export function Calculator({
       </div>
 
       <div className="input-group">
-        <label>Monthly Income in Retirement (USD)</label>
+        <label>Monthly Income in Retirement (in today's money)</label>
         <div className="input-with-prefix">
           <span className="prefix">$</span>
           <input
