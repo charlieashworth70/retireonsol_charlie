@@ -1,43 +1,59 @@
-# RetireOnSol (Charlie's Version)
+# RetireOnSol (Charlie's Simple Version)
 
-My clean, opinionated take on Solana retirement planning.
+Dead simple Solana retirement calculator with realistic, fixed parameters.
 
 ## Design Philosophy
 
-**Less is more.** Most retirement calculators overwhelm users with options. This one doesn't.
+**Radically Simple.** No toggles, no tabs, no options. Just the four inputs that matter and instant, realistic results.
 
-### What's Different
+## What's Included
 
-1. **Smart Defaults** — Works out of box. 25% SOL CAGR, 80% vol, 4% rule. Realistic, not moonboy.
-2. **Progressive Disclosure** — Advanced features hidden until you need them. Clean first impression.
-3. **Mobile-First** — Big touch targets, readable on phones. 90% of people plan on mobile.
-4. **Instant Feedback** — Change a slider, see results immediately. No "Calculate" button needed.
-5. **Honest Numbers** — Shows confidence intervals (P10/P90). Retirement planning needs realism, not hopium.
+- **4 Core Inputs**
+  - Current SOL holdings
+  - Monthly DCA (USD)
+  - Years until retirement
+  - Monthly withdrawal (USD)
 
-### What's Included
+- **Instant Results**
+  - Projected portfolio value (median)
+  - Monte Carlo confidence intervals (P10/P50/P90)
+  - Years of income sustainability
+  - ROI and total invested
 
-- **Wallet Integration** — Connect Phantom, import SOL balance instantly
-- **DCA Planning** — Monthly USD contributions with price averaging
-- **Growth Projections** — Conservative 25% CAGR (not 1000% moonshots)
-- **Monte Carlo** — 90% confidence bands for realistic planning
-- **Sustainability Check** — Red/green warnings if your plan won't last 30 years
-- **Clean UI** — Solana brand colors, dark theme, no clutter
+- **Wallet Integration**
+  - Connect Phantom or any Solana wallet
+  - Import balance with one click
 
-### What's NOT Included (Yet)
+- **Fixed Realistic Parameters** (hardcoded, no UI controls)
+  - Growth: **15% CAGR** (realistic long-term)
+  - Inflation: **3.5% annual** (always applied to withdrawals)
+  - Debasement: **0%** (disabled)
+  - JitoSOL: **disabled** (pure SOL only)
+  - Monte Carlo: **P10/P50/P90** confidence intervals
 
-- Monitor tab (planned — track active plans vs actual wallet)
-- Jupiter swap integration (planned — DCA automation)
-- Notifications (planned — "time to DCA" reminders)
-- JitoSOL staking (planned — liquid staking APR)
-- Power law / S-curve models (CAGR is enough for v1)
-- Inflation adjustments (adds complexity most won't use)
+## What's NOT Included
+
+- Plan/Monitor tab split (removed for simplicity)
+- All toggles and option switches (fixed parameters)
+- Execute plan / automation features
+- Growth rate selector (fixed at 15%)
+- Inflation toggle (always on at 3.5%)
+
+The "Advanced" button in the header is a placeholder for future linking to the full-featured RetireOnSol.
+
+## Why These Parameters?
+
+- **15% CAGR**: Realistic for mature SOL. Not moonboy 1000x, not bearish. Sustainable.
+- **3.5% inflation**: Historical US average. Always applied for real purchasing power.
+- **60% volatility**: Mature crypto vol for Monte Carlo confidence bands.
+- **Pure SOL**: No liquid staking complexity. Just SOL.
 
 ## Tech Stack
 
-- **Vite + React + TypeScript** — Fast, type-safe, modern
-- **Solana Wallet Adapter** — Standard wallet integration
-- **No bloat** — Minimal dependencies, <600KB bundle
-- **CSS only** — No Tailwind/MUI. Just clean, custom styles.
+- Vite + React + TypeScript
+- Solana Wallet Adapter
+- Minimal dependencies (~600KB bundle)
+- Custom CSS (no frameworks)
 
 ## Run Locally
 
@@ -54,37 +70,17 @@ npm run build
 
 Outputs to `dist/` — ready for deployment.
 
-## Philosophy on Features
+## Deployment
 
-**Every feature has a cost.** Users pay with confusion, developers pay with maintenance.
+Deploys automatically to GitHub Pages on push to master:
+**https://charlieashworth70.github.io/retireonsol_charlie/**
 
-- **Don't add unless 80%+ will use it**
-- **Don't show unless user asks**
-- **Don't bloat bundle for edge cases**
+## Philosophy
 
-This isn't feature-complete. It's feature-*right*.
+This isn't a power tool. It's a quick, honest answer to "Can I retire on SOL?"
 
-## Compared to Original RetireOnSol
-
-| Original | Charlie's Version |
-|----------|------------------|
-| Every option upfront | Hidden until needed |
-| 7 growth models | 1 (CAGR) |
-| Inflation/debasement | Not yet |
-| JitoSOL toggle | Not yet |
-| ~1MB bundle | ~600KB |
-| Complex UI | Minimal UI |
-
-Both valid. Different goals.
-
-Original = Power tool for quants  
-This = iPhone of retirement planning
-
-## License
-
-MIT — do what you want.
+No complexity. No options. No BS. Just math.
 
 ---
 
-Built by Charlie Ashworth for Chris Booth.  
-**Feedback welcome.**
+Built by Charlie Ashworth for Chris Booth.
