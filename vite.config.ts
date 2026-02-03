@@ -16,5 +16,5 @@ export default defineConfig({
       protocolImports: true,
     }),
   ],
-  base: '/retireonsol_charlie/',
+  base: process.env.VITE_BASE_PATH || '/retireonsol_charlie/',
 })
