@@ -1,4 +1,7 @@
-import { useWallet } from '../contexts/WalletProvider';
+import { useState, useEffect, useRef } from 'react';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import { useWalletBalance } from '../hooks/useWalletBalance';
 import './Calculator.css';
 
 interface CalculatorProps {
@@ -22,18 +25,37 @@ export function Calculator({
   onYearsChange,
   onWithdrawalMonthlyChange
 }: CalculatorProps) {
-  const { connected, balance, connect } = useWallet();
+  const { connected } = useWallet();
+  const { setVisible: setWalletModalVisible } = useWalletModal();
+  const { balance, loading: walletLoading, error: walletError } = useWalletBalance();
+  const [pendingImport, setPendingImport] = useState(false);
+  const [imported, setImported] = useState(false);
+  const importTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleImportWallet = async () => {
-    if (!connected) {
-      try {
-        await connect();
-        // After connection, the balance will be fetched automatically
-      } catch (error) {
-        console.error('Failed to connect wallet:', error);
+  // When wallet connects and we have a pending import, do the import
+  useEffect(() => {
+    if (pendingImport && connected && !walletLoading) {
+      if (balance !== null) {
+        onCurrentSOLChange(balance);
+        setPendingImport(false);
+        setImported(true);
+        if (importTimerRef.current) clearTimeout(importTimerRef.current);
+        importTimerRef.current = setTimeout(() => setImported(false), 3000);
+      } else if (walletError) {
+        setPendingImport(false);
       }
-    } else if (balance !== null) {
+    }
+  }, [pendingImport, connected, walletLoading, balance, walletError, onCurrentSOLChange]);
+
+  const handleImportWallet = () => {
+    if (connected && balance !== null) {
       onCurrentSOLChange(balance);
+      setImported(true);
+      if (importTimerRef.current) clearTimeout(importTimerRef.current);
+      importTimerRef.current = setTimeout(() => setImported(false), 3000);
+    } else {
+      setPendingImport(true);
+      setWalletModalVisible(true);
     }
   };
 
@@ -41,18 +63,26 @@ export function Calculator({
     <div className="calculator card">
       <h2>Your Plan</h2>
       
+      {imported && (
+        <div style={{
+          background: 'rgba(20, 241, 149, 0.1)',
+          border: '1px solid rgba(20, 241, 149, 0.3)',
+          borderRadius: '6px',
+          padding: '6px 10px',
+          marginBottom: '10px',
+          fontSize: '0.8rem',
+          color: '#14F195',
+          textAlign: 'center',
+        }}>
+          ✓ Balance imported from wallet
+        </div>
+      )}
       <div className="input-group">
         <div className="label-row">
           <label>Current SOL Holdings</label>
-          {!connected ? (
-            <button className="link-btn" onClick={handleImportWallet}>
-              Connect Wallet
-            </button>
-          ) : (
-            <button className="link-btn" onClick={handleImportWallet}>
-              Import Balance
-            </button>
-          )}
+          <button className="link-btn" onClick={handleImportWallet} disabled={walletLoading}>
+            {walletLoading ? 'Loading...' : (connected ? 'Import Balance' : 'Connect & Import')}
+          </button>
         </div>
         <input
           type="number"

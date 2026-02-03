@@ -139,8 +139,8 @@ const WalletContent: FC<{ children: ReactNode }> = ({ children }) => {
 
 export const WalletProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const endpoint = useMemo(() => {
-    // Use environment variable or fall back to Ankr's free RPC
-    return import.meta.env.VITE_SOLANA_RPC_URL || 'https://rpc.ankr.com/solana';
+    // Use environment variable or fall back to Phantom's public RPC
+    return import.meta.env.VITE_SOLANA_RPC_URL || 'https://solana-mainnet.phantom.app/YBPpkkN4g91xDiAnTE9r0RcMkjg0sKUIWvAfoFVJ';
   }, []);
   const wallets = useMemo(() => [
     new PhantomWalletAdapter(),

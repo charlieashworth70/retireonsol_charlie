@@ -2,31 +2,71 @@ import { useState, useEffect, useMemo } from 'react';
 import { formatUSD, formatSOL } from '../utils/calculations';
 import { runDrawdownSimulation, formatMonth, type DrawdownResult } from '../utils/drawdownMonteCarlo';
 import { DrawdownChart } from './DrawdownChart';
+import { shareDrawdown } from '../utils/shareDrawdown';
+import { loadSettings, saveSettings, DEFAULT_SETTINGS } from '../utils/storage';
 
 interface SpendTabProps {
-  startingSOL: number;
-  startingPrice: number;
-  startingValueUSD: number;
+  // Data from Grow tab
+  startingSOL: number;        // Final SOL balance from accumulation
+  startingPrice: number;      // Expected SOL price at retirement
+  startingValueUSD: number;   // Portfolio value at retirement
+  // Inherit settings from Grow tab
   defaultInflationRate: number;
-  spendNow: boolean;
+  defaultVolatility: number;
+  defaultSimulations: number;
+  // Reset trigger - when this changes, reset to defaults
+  resetKey?: number;
 }
+
+// Load initial spend settings
+const initialSpendSettings = loadSettings();
 
 export function SpendTab({
   startingSOL,
   startingPrice,
   startingValueUSD,
   defaultInflationRate,
-  spendNow,
+  // defaultVolatility - now using storage defaults
+  // defaultSimulations - now using storage defaults
+  resetKey,
 }: SpendTabProps) {
-  const [monthlyIncome, setMonthlyIncome] = useState(3000);
-  const [monthlyIncomeMax, setMonthlyIncomeMax] = useState(10000);
-  const [retirementYears, setRetirementYears] = useState(30);
-  const [volatility, setVolatility] = useState(0.25);
-  const [realGrowthRate, setRealGrowthRate] = useState(0.05);
-  const [inflationRate, setInflationRate] = useState(defaultInflationRate);
-  const [simulations, setSimulations] = useState(500);
+  // Spend settings (with localStorage defaults)
+  const [monthlyIncome, setMonthlyIncome] = useState(initialSpendSettings.spendMonthlyIncome ?? DEFAULT_SETTINGS.spendMonthlyIncome);
+  const [monthlyIncomeMax, setMonthlyIncomeMax] = useState(initialSpendSettings.spendMonthlyIncomeMax ?? DEFAULT_SETTINGS.spendMonthlyIncomeMax);
+  const [retirementYears, setRetirementYears] = useState(initialSpendSettings.spendRetirementYears ?? DEFAULT_SETTINGS.spendRetirementYears);
+  const [volatility, setVolatility] = useState(initialSpendSettings.spendVolatility ?? DEFAULT_SETTINGS.spendVolatility);
+  const [realGrowthRate, setRealGrowthRate] = useState(initialSpendSettings.spendRealGrowthRate ?? DEFAULT_SETTINGS.spendRealGrowthRate);
+  const [inflationRate, setInflationRate] = useState(initialSpendSettings.spendInflationRate ?? defaultInflationRate);
+  const [simulations, setSimulations] = useState(initialSpendSettings.spendSimulations ?? DEFAULT_SETTINGS.spendSimulations);
   const [settingsExpanded, setSettingsExpanded] = useState(false);
 
+  // Reset to defaults when resetKey changes (triggered by Reset All Settings button)
+  useEffect(() => {
+    if (resetKey !== undefined && resetKey > 0) {
+      setMonthlyIncome(DEFAULT_SETTINGS.spendMonthlyIncome);
+      setMonthlyIncomeMax(DEFAULT_SETTINGS.spendMonthlyIncomeMax);
+      setRetirementYears(DEFAULT_SETTINGS.spendRetirementYears);
+      setVolatility(DEFAULT_SETTINGS.spendVolatility);
+      setRealGrowthRate(DEFAULT_SETTINGS.spendRealGrowthRate);
+      setInflationRate(DEFAULT_SETTINGS.spendInflationRate);
+      setSimulations(DEFAULT_SETTINGS.spendSimulations);
+    }
+  }, [resetKey]);
+
+  // Save spend settings when they change
+  useEffect(() => {
+    saveSettings({
+      spendMonthlyIncome: monthlyIncome,
+      spendMonthlyIncomeMax: monthlyIncomeMax,
+      spendRetirementYears: retirementYears,
+      spendVolatility: volatility,
+      spendRealGrowthRate: realGrowthRate,
+      spendInflationRate: inflationRate,
+      spendSimulations: simulations,
+    });
+  }, [monthlyIncome, monthlyIncomeMax, retirementYears, volatility, realGrowthRate, inflationRate, simulations]);
+
+  // Simulation state
   const [isCalculating, setIsCalculating] = useState(false);
   const [drawdownResult, setDrawdownResult] = useState<DrawdownResult | null>(null);
 
@@ -57,13 +97,13 @@ export function SpendTab({
     return () => clearTimeout(timeoutId);
   }, [startingSOL, startingPrice, monthlyIncome, retirementYears, volatility, realGrowthRate, simulations, inflationRate]);
 
-  // Calculate annual withdrawal rate
+  // Calculate annual withdrawal rate (4% rule comparison)
   const annualWithdrawalRate = useMemo(() => {
     if (startingValueUSD <= 0) return 0;
     return (monthlyIncome * 12) / startingValueUSD;
   }, [monthlyIncome, startingValueUSD]);
 
-  // Safe withdrawal rate (4% rule, adjusted for duration)
+  // Safe withdrawal rate adjusted for retirement duration
   const safeWithdrawalRate = useMemo(() => {
     const baseRate = 0.04;
     const baseYears = 30;
@@ -71,55 +111,35 @@ export function SpendTab({
     return Math.min(0.08, Math.max(0.025, baseRate * adjustment));
   }, [retirementYears]);
 
+  // Safe withdrawal suggestion based on adjusted rate
   const safeMonthlyWithdrawal = useMemo(() => {
     return Math.round(startingValueUSD * safeWithdrawalRate / 12);
   }, [startingValueUSD, safeWithdrawalRate]);
 
   return (
     <>
-      <section className="adv-section">
+      <section className="input-section">
         <h2>Portfolio at Retirement</h2>
-        <div className="spend-portfolio-summary" style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
-          gap: '1rem',
-          padding: '1rem',
-          background: 'var(--bg-dark)',
-          borderRadius: '8px'
-        }}>
-          <div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-              Portfolio Value
-            </div>
-            <div style={{ fontSize: '1.3rem', fontWeight: 'bold', color: 'var(--sol-green)' }}>
-              {formatUSD(startingValueUSD)}
-            </div>
+        <div className="spend-portfolio-summary">
+          <div className="portfolio-stat">
+            <span className="stat-label">Portfolio Value</span>
+            <span className="stat-value highlight">{formatUSD(startingValueUSD)}</span>
           </div>
-          <div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-              SOL Balance
-            </div>
-            <div style={{ fontSize: '1.3rem', fontWeight: 'bold' }}>
-              {formatSOL(startingSOL)} SOL
-            </div>
+          <div className="portfolio-stat">
+            <span className="stat-label">SOL Balance</span>
+            <span className="stat-value">{formatSOL(startingSOL)} SOL</span>
           </div>
-          <div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-              SOL Price
-            </div>
-            <div style={{ fontSize: '1.3rem', fontWeight: 'bold' }}>
-              ${startingPrice.toLocaleString()}
-            </div>
+          <div className="portfolio-stat">
+            <span className="stat-label">SOL Price</span>
+            <span className="stat-value">${startingPrice.toLocaleString()}</span>
           </div>
         </div>
-        {!spendNow && (
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.75rem', fontStyle: 'italic' }}>
-            Values from Grow tab (median projection)
-          </p>
-        )}
+        <p className="portfolio-note">
+          Values from Grow tab (median with Monte Carlo enabled)
+        </p>
       </section>
 
-      <section className="adv-section">
+      <section className="input-section">
         <h2>Withdrawal Plan</h2>
 
         <div className="input-group slider-group">
@@ -137,7 +157,7 @@ export function SpendTab({
           />
           <div className="slider-labels">
             <span>$500</span>
-            <span className="slider-marker" style={{ position: 'absolute', left: `${(safeMonthlyWithdrawal / monthlyIncomeMax) * 100}%`, transform: 'translateX(-50%)' }}>
+            <span className="slider-marker" style={{ left: `${(safeMonthlyWithdrawal / monthlyIncomeMax) * 100}%` }}>
               {formatUSD(safeMonthlyWithdrawal)} ({(safeWithdrawalRate * 100).toFixed(1)}%)
             </span>
             <span>${(monthlyIncomeMax / 1000).toFixed(0)}K</span>
@@ -156,7 +176,9 @@ export function SpendTab({
           </div>
           <span className="input-hint">
             {annualWithdrawalRate > 0 && (
-              <>Annual withdrawal rate: {(annualWithdrawalRate * 100).toFixed(1)}%</>
+              <>
+                Annual withdrawal rate: {(annualWithdrawalRate * 100).toFixed(1)}%
+              </>
             )}
           </span>
         </div>
@@ -175,10 +197,12 @@ export function SpendTab({
           />
           <div className="slider-labels">
             <span>10 years</span>
+            <span className="slider-marker" style={{ left: '62.5%' }}>35yr typical</span>
             <span>50 years</span>
           </div>
         </div>
 
+        {/* Expandable simulation settings */}
         <button
           type="button"
           className={`params-toggle ${settingsExpanded ? 'expanded' : ''}`}
@@ -207,6 +231,7 @@ export function SpendTab({
             />
             <div className="slider-labels">
               <span>10%</span>
+              <span className="slider-marker" style={{ left: '33%' }}>25% typical</span>
               <span>60%</span>
             </div>
             <span className="input-hint">Mature assets: 15-25%. Higher vol = more risk but also more upside potential.</span>
@@ -227,6 +252,7 @@ export function SpendTab({
             />
             <div className="slider-labels">
               <span>0%</span>
+              <span className="slider-marker" style={{ left: '53%' }}>8% stocks</span>
               <span>15%</span>
             </div>
             <span className="input-hint">Expected return above inflation. 0% = conservative, 7-8% = stock-like, 10%+ = optimistic.</span>
@@ -247,6 +273,7 @@ export function SpendTab({
             />
             <div className="slider-labels">
               <span>0%</span>
+              <span className="slider-marker" style={{ left: '35%' }}>3.5% historical</span>
               <span>10%</span>
             </div>
             <span className="input-hint">Withdrawal amount increases yearly to maintain purchasing power.</span>
@@ -267,16 +294,35 @@ export function SpendTab({
             />
             <div className="slider-labels">
               <span>100</span>
+              <span className="slider-marker" style={{ left: '21%' }}>500 default</span>
               <span>2000</span>
             </div>
           </div>
         </div>
       </section>
 
+      {/* Results Section */}
       {drawdownResult && (
-        <section className="adv-section results-section">
+        <section className="results-section">
           <div className="results-header">
             <h2>Drawdown Results</h2>
+            <button
+              type="button"
+              className="share-btn"
+              onClick={() => shareDrawdown({
+                result: drawdownResult,
+                startingSOL,
+                startingPrice,
+                startingValueUSD,
+                monthlyIncome,
+                retirementYears,
+                volatility,
+                inflationRate,
+                simulations,
+              })}
+            >
+              Share
+            </button>
           </div>
 
           <div className="summary-cards">
@@ -285,7 +331,7 @@ export function SpendTab({
               <span className={`card-value ${drawdownResult.successRate >= 0.9 ? 'highlight' : drawdownResult.successRate >= 0.7 ? '' : 'warning'}`}>
                 {Math.round(drawdownResult.successRate * 100)}%
               </span>
-              <span className="card-subvalue" style={{ fontSize: '0.85rem', marginTop: '0.25rem', color: 'var(--text-secondary)' }}>
+              <span className="card-subvalue">
                 {drawdownResult.successRate >= 0.9 ? 'Excellent' : drawdownResult.successRate >= 0.7 ? 'Good' : 'Risky'}
               </span>
             </div>
@@ -294,7 +340,7 @@ export function SpendTab({
               <span className="card-value">
                 {formatUSD(drawdownResult.medianEndingValue)}
               </span>
-              <span className="card-subvalue" style={{ fontSize: '0.85rem', marginTop: '0.25rem', color: 'var(--text-secondary)' }}>
+              <span className="card-subvalue">
                 After {retirementYears} years
               </span>
             </div>
@@ -304,7 +350,7 @@ export function SpendTab({
                 {Math.round((1 - drawdownResult.successRate) * simulations)}
               </span>
               {drawdownResult.medianFailureMonth && (
-                <span className="card-subvalue" style={{ fontSize: '0.85rem', marginTop: '0.25rem', color: 'var(--text-secondary)' }}>
+                <span className="card-subvalue">
                   Median: {formatMonth(drawdownResult.medianFailureMonth)}
                 </span>
               )}
@@ -313,16 +359,9 @@ export function SpendTab({
 
           <div className="chart-container">
             {isCalculating && (
-              <div className="mc-loading-overlay" style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                textAlign: 'center',
-                color: 'var(--sol-purple)',
-                fontWeight: 'bold'
-              }}>
-                <div>Running simulations...</div>
+              <div className="mc-loading-overlay">
+                <div className="mc-spinner"></div>
+                <span>Running simulations...</span>
               </div>
             )}
             <DrawdownChart
@@ -332,26 +371,28 @@ export function SpendTab({
             />
           </div>
 
-          <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(153, 69, 255, 0.05)', borderRadius: '8px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-            <p style={{ margin: 0 }}>
+          <div className="drawdown-summary-note">
+            <p>
               Simulating {simulations} retirement scenarios with {formatUSD(monthlyIncome)}/month withdrawals
               (inflation-adjusted at {(inflationRate * 100).toFixed(1)}% annually).
-              {drawdownResult.successRate < 0.9 && (
-                <span style={{ color: '#FF9500', fontWeight: 'bold' }}>
-                  {' '}Consider reducing monthly income to {formatUSD(safeMonthlyWithdrawal)} for higher success rate.
-                </span>
-              )}
+              {drawdownResult.successRate < 0.9 && (() => {
+                const meaningfulSuggestion = safeMonthlyWithdrawal >= 500 && monthlyIncome > safeMonthlyWithdrawal * 1.2;
+                if (meaningfulSuggestion) {
+                  return (
+                    <span className="suggestion">
+                      {' '}Consider reducing monthly income to {formatUSD(safeMonthlyWithdrawal)} for higher success rate.
+                    </span>
+                  );
+                } else {
+                  return (
+                    <span className="suggestion">
+                      {' '}Your portfolio may be too small for this withdrawal rate. Try increasing your portfolio in the Grow tab or reducing monthly income.
+                    </span>
+                  );
+                }
+              })()}
             </p>
           </div>
-
-          <button
-            type="button"
-            className="btn-primary"
-            style={{ marginTop: '1.5rem', width: '100%', padding: '1rem', fontSize: '1.1rem', fontWeight: 'bold' }}
-            onClick={() => alert('Plan execution coming soon! This will connect to Jupiter for DCA automation and withdrawal scheduling.')}
-          >
-            Execute Plan
-          </button>
         </section>
       )}
     </>
