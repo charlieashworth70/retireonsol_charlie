@@ -6,19 +6,20 @@ interface ResultsProps {
 }
 
 export function Results({ projection }: ResultsProps) {
-  const roi = ((projection.endValue - projection.totalInvested) / projection.totalInvested) * 100;
+  const roi = ((projection.p50 - projection.totalInvested) / projection.totalInvested) * 100;
   const sustainable = projection.yearsOfIncome >= 30;
 
   return (
     <div className="results">
       <div className="result-card primary">
-        <div className="result-label">Projected Portfolio Value</div>
-        <div className="result-value">{formatUSD(projection.endValue)}</div>
+        <div className="result-label">Projected Portfolio Value (Median)</div>
+        <div className="result-value">{formatUSD(projection.p50)}</div>
         <div className="result-range">
-          <span className="range-label">90% confidence:</span>
-          <span className="range-values">
-            {formatUSD(projection.worstCase)} — {formatUSD(projection.bestCase)}
-          </span>
+          <div style={{ fontSize: '0.9em', marginTop: '8px', color: '#888' }}>
+            <div>Pessimistic (P10): {formatUSD(projection.p10)}</div>
+            <div>Median (P50): {formatUSD(projection.p50)}</div>
+            <div>Optimistic (P90): {formatUSD(projection.p90)}</div>
+          </div>
         </div>
       </div>
 
@@ -46,6 +47,10 @@ export function Results({ projection }: ResultsProps) {
             {projection.yearsOfIncome.toFixed(1)} years
           </div>
         </div>
+      </div>
+
+      <div style={{ fontSize: '0.85em', color: '#666', marginTop: '12px', fontStyle: 'italic' }}>
+        Based on 15% CAGR growth, 3.5% inflation (always applied)
       </div>
 
       {!sustainable && (

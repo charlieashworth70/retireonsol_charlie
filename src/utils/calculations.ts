@@ -1,6 +1,6 @@
 /**
  * Core retirement calculations
- * Simple, realistic, no BS
+ * Fixed realistic parameters - no toggles
  */
 
 export interface RetirementInput {
@@ -12,18 +12,23 @@ export interface RetirementInput {
 
 export interface RetirementProjection {
   startValue: number; // USD
-  endValue: number; // USD
+  endValue: number; // USD (median/P50)
   totalInvested: number; // USD
   monthlyIncome: number; // USD
   yearsOfIncome: number;
-  worstCase: number; // P10
-  bestCase: number; // P90
+  p10: number; // Pessimistic case
+  p50: number; // Median case
+  p90: number; // Optimistic case
   finalSOL: number;
 }
 
+// FIXED PARAMETERS (hardcoded, no UI controls)
 const CURRENT_SOL_PRICE = 180; // Will fetch live later
-const SOL_GROWTH_RATE = 0.25; // 25% CAGR - conservative for mature crypto
-const VOLATILITY = 0.80; // 80% annualized vol
+const SOL_GROWTH_RATE = 0.15; // 15% CAGR - realistic long-term
+const INFLATION_RATE = 0.035; // 3.5% annual inflation (always on)
+const VOLATILITY = 0.60; // 60% annualized vol for mature SOL
+// Debasement: 0% (not included)
+// JitoSOL: disabled (pure SOL only)
 
 export function calculateRetirement(input: RetirementInput): RetirementProjection {
   const { currentSOL, dcaMonthly, years, withdrawalMonthly } = input;
@@ -53,24 +58,27 @@ export function calculateRetirement(input: RetirementInput): RetirementProjectio
   const finalSOL = sol;
   const endValue = finalSOL * CURRENT_SOL_PRICE * Math.pow(1 + SOL_GROWTH_RATE, years);
   
-  // Calculate retirement duration (using 4% rule)
-  const annualWithdrawal = withdrawalMonthly * 12;
+  // Apply inflation to withdrawal needs
+  const inflationAdjustedWithdrawal = withdrawalMonthly * Math.pow(1 + INFLATION_RATE, years);
+  const annualWithdrawal = inflationAdjustedWithdrawal * 12;
   const yearsOfIncome = endValue / annualWithdrawal;
   
-  // Monte Carlo approximation (lognormal)
-  const stdDev = VOLATILITY / Math.sqrt(years);
+  // Monte Carlo confidence intervals (lognormal distribution)
+  const timeVolatility = VOLATILITY * Math.sqrt(years);
   
-  const worstCase = endValue * Math.exp(-1.28 * stdDev * Math.sqrt(years)); // P10
-  const bestCase = endValue * Math.exp(1.28 * stdDev * Math.sqrt(years)); // P90
+  const p10 = endValue * Math.exp(-1.28 * timeVolatility); // Pessimistic (10th percentile)
+  const p50 = endValue; // Median (50th percentile)
+  const p90 = endValue * Math.exp(1.28 * timeVolatility); // Optimistic (90th percentile)
   
   return {
     startValue,
-    endValue,
+    endValue: p50,
     totalInvested,
     monthlyIncome: withdrawalMonthly,
     yearsOfIncome,
-    worstCase,
-    bestCase,
+    p10,
+    p50,
+    p90,
     finalSOL
   };
 }

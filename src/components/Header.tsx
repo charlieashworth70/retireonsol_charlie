@@ -1,12 +1,11 @@
-import type { Tab } from '../App';
 import './Header.css';
 
-interface HeaderProps {
-  tab: Tab;
-  onTabChange: (tab: Tab) => void;
-}
+export function Header() {
+  const handleAdvancedClick = () => {
+    // Placeholder - will link to full RetireOnSol in future
+    alert('Advanced features coming soon! This will link to the full RetireOnSol calculator.');
+  };
 
-export function Header({ tab, onTabChange }: HeaderProps) {
   return (
     <header className="header">
       <div className="header-brand">
@@ -17,20 +16,22 @@ export function Header({ tab, onTabChange }: HeaderProps) {
         </div>
       </div>
       
-      <nav className="tabs">
-        <button
-          className={`tab ${tab === 'plan' ? 'active' : ''}`}
-          onClick={() => onTabChange('plan')}
-        >
-          Plan
-        </button>
-        <button
-          className={`tab ${tab === 'monitor' ? 'active' : ''}`}
-          onClick={() => onTabChange('monitor')}
-        >
-          Monitor
-        </button>
-      </nav>
+      <button 
+        className="advanced-btn"
+        onClick={handleAdvancedClick}
+        style={{
+          padding: '8px 16px',
+          background: 'rgba(255, 255, 255, 0.1)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          borderRadius: '8px',
+          color: 'white',
+          cursor: 'pointer',
+          fontSize: '14px',
+          fontWeight: '500'
+        }}
+      >
+        Advanced
+      </button>
     </header>
   );
 }
