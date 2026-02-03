@@ -51,7 +51,15 @@ export function useWalletBalance(): WalletBalanceResult {
       setJitoSolBalance(Math.round(jito * 100) / 100);
     } catch (err) {
       console.error('Failed to fetch balance:', err);
-      setError('Could not fetch balance');
+      
+      // Check if it's a 403 error (rate limiting)
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      if (errorMessage.includes('403') || errorMessage.includes('forbidden')) {
+        setError('RPC rate limit reached. Please try again in a moment or configure a custom RPC endpoint.');
+      } else {
+        setError('Could not fetch balance. Please check your connection.');
+      }
+      
       setBalance(null);
       setJitoSolBalance(null);
     } finally {

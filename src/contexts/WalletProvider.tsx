@@ -7,7 +7,7 @@ import {
 } from '@solana/wallet-adapter-react';
 import { WalletModalProvider, useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets';
-import { clusterApiUrl, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
+import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 
 // Import wallet adapter CSS
 import '@solana/wallet-adapter-react-ui/styles.css';
@@ -82,6 +82,13 @@ const WalletContent: FC<{ children: ReactNode }> = ({ children }) => {
       }
     } catch (error) {
       console.error('Failed to fetch balance:', error);
+      
+      // Log helpful message for RPC errors
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('403') || errorMessage.includes('forbidden')) {
+        console.error('RPC rate limit hit. Consider configuring VITE_SOLANA_RPC_URL in .env');
+      }
+      
       setBalance(null);
       setJitoBalance(null);
     } finally {
@@ -131,7 +138,10 @@ const WalletContent: FC<{ children: ReactNode }> = ({ children }) => {
 };
 
 export const WalletProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  const endpoint = useMemo(() => clusterApiUrl('mainnet-beta'), []);
+  const endpoint = useMemo(() => {
+    // Use environment variable or fall back to Ankr's free RPC
+    return import.meta.env.VITE_SOLANA_RPC_URL || 'https://rpc.ankr.com/solana';
+  }, []);
   const wallets = useMemo(() => [
     new PhantomWalletAdapter(),
     new SolflareWalletAdapter()
