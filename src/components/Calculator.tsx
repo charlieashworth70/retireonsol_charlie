@@ -24,9 +24,14 @@ export function Calculator({
 }: CalculatorProps) {
   const { connected, balance, connect } = useWallet();
 
-  const handleImportWallet = () => {
+  const handleImportWallet = async () => {
     if (!connected) {
-      connect();
+      try {
+        await connect();
+        // After connection, the balance will be fetched automatically
+      } catch (error) {
+        console.error('Failed to connect wallet:', error);
+      }
     } else if (balance !== null) {
       onCurrentSOLChange(balance);
     }

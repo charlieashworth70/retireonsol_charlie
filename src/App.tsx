@@ -36,18 +36,18 @@ function App() {
         
         {/* Mode Toggle */}
         <div className="mode-toggle-container">
-          <div className="mode-toggle">
+          <div className={`mode-toggle ${mode === 'advanced' ? 'advanced' : ''}`}>
             <button
               className={`mode-btn ${mode === 'basic' ? 'active' : ''}`}
               onClick={() => setMode('basic')}
             >
-              Basic mode
+              Basic
             </button>
             <button
               className={`mode-btn ${mode === 'advanced' ? 'active' : ''}`}
               onClick={() => setMode('advanced')}
             >
-              Advanced mode
+              Advanced
             </button>
           </div>
         </div>

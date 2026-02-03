@@ -215,6 +215,9 @@ export async function generateShareImage(options: ShareImageOptions): Promise<Bl
   ctx.fillStyle = '#888888';
   ctx.font = '14px -apple-system, BlinkMacSystemFont, sans-serif';
   ctx.fillText('Monthly Income', statsStartX + statsGap * 2, statsY + 22);
+  ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
+  ctx.fillStyle = '#666666';
+  ctx.fillText('(in today\'s money)', statsStartX + statsGap * 2, statsY + 36);
 
   // Years of Income
   ctx.fillStyle = '#FFFFFF';
@@ -238,7 +241,7 @@ export async function generateShareImage(options: ShareImageOptions): Promise<Bl
   if (dcaMonthly > 0) {
     params.push(`DCA: $${dcaMonthly}/month`);
   }
-  params.push('15% CAGR growth');
+  params.push('25% CAGR with auto decay');
   params.push('3.5% inflation (always applied)');
 
   ctx.fillText(params.join('  •  '), canvas.width / 2, paramsY);

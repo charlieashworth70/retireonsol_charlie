@@ -1,5 +1,8 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { useWalletBalance } from '../hooks/useWalletBalance';
+import { Share2, ArrowRight } from 'lucide-react';
 import {
   calculateProjection,
   formatUSD,
@@ -9,12 +12,15 @@ import {
   type GrowthModel,
   type GrowthModelParams,
 } from '../utils/calculations';
-import { getModelDisplayName, getModelDescription, getFuturePowerLawFairValue, type CAGRDecayType } from '../utils/growthModels';
+import { getModelDisplayName, getModelDescription, getFuturePowerLawFairValue, calculateFuturePrice, type CAGRDecayType } from '../utils/growthModels';
 import { toTodaysDollars, type InflationParams } from '../utils/inflation';
 import { runMonteCarloSimulation, type MonteCarloParams, type MonteCarloResult, type VolatilityDecayType } from '../utils/monteCarlo';
 import { fetchSOLPrice } from '../utils/solPrice';
 import { shareProjection as shareAdvanced } from '../utils/shareImageAdvanced';
 import { GrowthChart } from './advanced/GrowthChart';
+import { SpendTab } from './SpendTab';
+import { MonitorAccum } from './MonitorAccum';
+import { MonitorDecum } from './MonitorDecum';
 import './AdvancedMode.css';
 
 type DCAFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
@@ -29,6 +35,10 @@ interface AdvancedModeProps {
 }
 
 export function AdvancedMode({ initialSOL = 100, initialDCA = 500, initialYears = 10 }: AdvancedModeProps) {
+  // Wallet connection
+  const { connected } = useWallet();
+  const { balance: walletSOL, jitoSolBalance: walletJitoSOL, refetch: refetchBalance } = useWalletBalance();
+
   // Tab state
   const [mainTab, setMainTab] = useState<MainTab>('plan');
   const [planSubTab, setPlanSubTab] = useState<PlanSubTab>('grow');
@@ -265,26 +275,6 @@ export function AdvancedMode({ initialSOL = 100, initialDCA = 500, initialYears 
             </button>
           </div>
 
-          {/* Spend Now Toggle */}
-          <section className="adv-section spend-now-section">
-            <div className="spend-now-toggle">
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={spendNow}
-                  onChange={(e) => setSpendNow(e.target.checked)}
-                />
-                <span className="toggle-slider"></span>
-              </label>
-              <div className="toggle-text">
-                <span className="toggle-label">Spend Now</span>
-                <span className="toggle-summary">
-                  {spendNow ? 'Skip accumulation, use existing SOL' : 'Standard DCA → spend flow'}
-                </span>
-              </div>
-            </div>
-          </section>
-
           {/* Grow Sub-tab Content */}
           {planSubTab === 'grow' && (
             <>
@@ -318,6 +308,21 @@ export function AdvancedMode({ initialSOL = 100, initialDCA = 500, initialYears 
                   </div>
                 </div>
 
+                {connected && (walletSOL !== null || walletJitoSOL !== null) && (
+                  <button
+                    type="button"
+                    className="link-btn"
+                    style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}
+                    onClick={() => {
+                      if (walletSOL !== null) setCurrentSOL(walletSOL);
+                      if (walletJitoSOL !== null) setCurrentJitoSOL(walletJitoSOL);
+                    }}
+                  >
+                    Import from connected wallet ({walletSOL?.toFixed(2)} SOL
+                    {walletJitoSOL && walletJitoSOL > 0 ? `, ${walletJitoSOL.toFixed(2)} JitoSOL` : ''})
+                  </button>
+                )}
+
                 <div className="price-display">
                   Current Price: <span className="price-value">${currentPrice?.toFixed(2)}</span>
                 </div>
@@ -327,6 +332,26 @@ export function AdvancedMode({ initialSOL = 100, initialDCA = 500, initialYears 
                     Current Value: <span className="highlight">{formatUSD((currentSOL + currentJitoSOL) * currentPrice)}</span>
                   </div>
                 )}
+              </section>
+
+              {/* Spend Now Toggle */}
+              <section className="adv-section spend-now-section">
+                <div className="spend-now-toggle">
+                  <label className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={spendNow}
+                      onChange={(e) => setSpendNow(e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
+                  <div className="toggle-text">
+                    <span className="toggle-label">Spend Now</span>
+                    <span className="toggle-summary">
+                      {spendNow ? 'Skip accumulation, use existing SOL' : 'Standard DCA → spend flow'}
+                    </span>
+                  </div>
+                </div>
               </section>
 
               {!spendNow && (
@@ -766,13 +791,14 @@ export function AdvancedMode({ initialSOL = 100, initialDCA = 500, initialYears 
           )}
 
           {/* Spend Sub-tab Content */}
-          {planSubTab === 'spend' && (
-            <section className="adv-section">
-              <h2>Spending Parameters</h2>
-              <p style={{ color: 'var(--text-secondary)' }}>
-                Configure your retirement spending plan here. Coming soon!
-              </p>
-            </section>
+          {planSubTab === 'spend' && projection && currentPrice && (
+            <SpendTab
+              startingSOL={mcEnabled && mcResult ? mcResult.finalSolP50 : projection.finalSOL}
+              startingPrice={calculateFuturePrice(currentPrice, spendNow ? 0 : years, growthModel, effectiveModelParams)}
+              startingValueUSD={mcEnabled && mcResult ? (inflationEnabled ? inflationAdjustmentFn(mcResult.finalP50, years) : mcResult.finalP50) : (inflationEnabled && todaysDollarsValue ? todaysDollarsValue : projection.finalValueUSD)}
+              defaultInflationRate={inflationRate}
+              spendNow={spendNow}
+            />
           )}
         </>
       )}
@@ -797,23 +823,32 @@ export function AdvancedMode({ initialSOL = 100, initialDCA = 500, initialYears 
           </div>
 
           {/* Accum Sub-tab */}
-          {monitorSubTab === 'accum' && (
-            <section className="adv-section">
-              <h2>Accumulation Monitoring</h2>
-              <p style={{ color: 'var(--text-secondary)' }}>
-                Track your accumulation progress here. Coming soon!
-              </p>
-            </section>
+          {monitorSubTab === 'accum' && currentPrice && (
+            <MonitorAccum
+              currentJitoSOL={currentJitoSOL}
+              currentPrice={currentPrice}
+              targetSOL={currentSOL}
+              years={years}
+              dcaAmountUSD={dcaAmountUSD}
+              dcaFrequency={dcaFrequency}
+              walletSOL={walletSOL}
+              walletJitoSOL={walletJitoSOL}
+              connected={connected}
+              onImportWallet={refetchBalance}
+            />
           )}
 
           {/* Decum Sub-tab */}
-          {monitorSubTab === 'decum' && (
-            <section className="adv-section">
-              <h2>Decumulation Monitoring</h2>
-              <p style={{ color: 'var(--text-secondary)' }}>
-                Monitor your retirement spending here. Coming soon!
-              </p>
-            </section>
+          {monitorSubTab === 'decum' && currentPrice && projection && (
+            <MonitorDecum
+              currentSOL={mcEnabled && mcResult ? mcResult.finalSolP50 : projection.finalSOL}
+              currentPrice={calculateFuturePrice(currentPrice, years, growthModel, effectiveModelParams)}
+              monthlyIncome={3000}
+              retirementYears={30}
+              walletSOL={walletSOL}
+              walletJitoSOL={walletJitoSOL}
+              connected={connected}
+            />
           )}
         </>
       )}
@@ -823,8 +858,8 @@ export function AdvancedMode({ initialSOL = 100, initialDCA = 500, initialYears 
         <section className="adv-section results-section">
           <div className="results-header">
             <h2>After {spendNow ? '0' : years} Years</h2>
-            <button className="share-btn" onClick={handleShare}>
-              📤 Share
+            <button className="share-btn" onClick={handleShare} title="Share projection">
+              <Share2 size={18} />
             </button>
           </div>
 
@@ -875,6 +910,18 @@ export function AdvancedMode({ initialSOL = 100, initialDCA = 500, initialYears 
             <div className="mc-calculating">
               Running {mcSimulations} Monte Carlo simulations...
             </div>
+          )}
+
+          {!spendNow && (
+            <button
+              type="button"
+              className="btn-primary"
+              style={{ marginTop: '1.5rem', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+              onClick={() => setPlanSubTab('spend')}
+            >
+              Next: Plan Spend Strategy
+              <ArrowRight size={18} />
+            </button>
           )}
         </section>
       )}

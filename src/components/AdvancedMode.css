@@ -6,6 +6,41 @@
   padding: 1rem;
 }
 
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--sol-green);
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  font-size: inherit;
+}
+
+.link-btn:hover {
+  color: var(--sol-cyan);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--sol-purple), var(--sol-cyan));
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(153, 69, 255, 0.3);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
 .advanced-loading {
   text-align: center;
   padding: 4rem 2rem;
@@ -21,74 +56,72 @@
   margin-bottom: 1rem;
 }
 
-/* Main Tabs */
+/* Main Tabs - Proper tab bar style with underline */
 .main-tabs {
   display: flex;
-  gap: 0.5rem;
+  gap: 0;
   margin-bottom: 1.5rem;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 0.5rem;
+  border-bottom: 2px solid var(--border);
 }
 
 .main-tab-btn {
   flex: 1;
   background: transparent;
   border: none;
+  border-bottom: 3px solid transparent;
   color: var(--text-secondary);
-  padding: 1rem;
-  border-radius: 8px;
-  font-size: 1.1rem;
-  font-weight: 700;
+  padding: 0.85rem 1rem;
+  font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  position: relative;
+  bottom: -2px;
 }
 
 .main-tab-btn:hover {
   color: var(--text-primary);
-  background: rgba(153, 69, 255, 0.1);
+  background: rgba(153, 69, 255, 0.05);
 }
 
 .main-tab-btn.active {
-  background: linear-gradient(135deg, var(--sol-purple), var(--sol-cyan));
-  color: white;
-  box-shadow: 0 2px 8px rgba(153, 69, 255, 0.3);
+  color: var(--sol-purple);
+  border-bottom-color: var(--sol-purple);
+  background: transparent;
 }
 
-/* Sub Tabs */
+/* Sub Tabs - Proper tab bar style with underline */
 .sub-tabs {
   display: flex;
-  gap: 0.5rem;
+  gap: 0;
   margin-bottom: 1.5rem;
-  background: var(--bg-dark);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 0.4rem;
+  border-bottom: 2px solid var(--border);
 }
 
 .sub-tab-btn {
   flex: 1;
   background: transparent;
   border: none;
+  border-bottom: 3px solid transparent;
   color: var(--text-secondary);
-  padding: 0.75rem;
-  border-radius: 7px;
-  font-size: 0.95rem;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  position: relative;
+  bottom: -2px;
 }
 
 .sub-tab-btn:hover {
   color: var(--text-primary);
-  background: rgba(153, 69, 255, 0.08);
+  background: rgba(153, 69, 255, 0.05);
 }
 
 .sub-tab-btn.active {
-  background: var(--sol-purple);
-  color: white;
-  box-shadow: 0 2px 6px rgba(153, 69, 255, 0.25);
+  color: var(--sol-green);
+  border-bottom-color: var(--sol-green);
+  background: transparent;
 }
 
 /* Spend Now Section */
@@ -532,6 +565,16 @@ input:checked + .toggle-slider:before {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+.card-value.warning {
+  color: #FF9500;
+}
+
+.card-subvalue {
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+  color: var(--text-secondary);
 }
 
 .chart-container {

@@ -1,3 +1,4 @@
+import { Share2 } from 'lucide-react';
 import { formatUSD, type RetirementProjection } from '../utils/calculationsBasic';
 import { shareProjection } from '../utils/shareImageBasic';
 import './Results.css';
@@ -23,11 +24,11 @@ export function Results({ projection, years, currentSOL, dcaMonthly }: ResultsPr
   };
 
   return (
-    <div className="results">
+    <div className="results card">
       <div className="results-header">
-        <h3 style={{ margin: 0, fontSize: '1.2rem' }}>Your Projection</h3>
-        <button className="share-btn" onClick={handleShare}>
-          📤 Share
+        <h2>Your Projection</h2>
+        <button className="share-btn" onClick={handleShare} title="Share projection">
+          <Share2 size={18} />
         </button>
       </div>
       <div className="result-card primary">
@@ -58,6 +59,7 @@ export function Results({ projection, years, currentSOL, dcaMonthly }: ResultsPr
         <div className="result-card">
           <div className="result-label">Monthly Income</div>
           <div className="result-value-sm">{formatUSD(projection.monthlyIncome)}/mo</div>
+          <div className="result-sublabel">(in today's money)</div>
         </div>
 
         <div className="result-card">
@@ -69,7 +71,7 @@ export function Results({ projection, years, currentSOL, dcaMonthly }: ResultsPr
       </div>
 
       <div style={{ fontSize: '0.85em', color: '#666', marginTop: '12px', fontStyle: 'italic' }}>
-        Based on 15% CAGR growth, 3.5% inflation (always applied)
+        Based on 25% CAGR with auto decay, 3.5% inflation (always applied)
       </div>
 
       {!sustainable && (
